@@ -90,6 +90,7 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
+#include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -1011,6 +1012,82 @@ VTKHVectorMagnitude::execute()
     vtkh::DataSet *mag_output = mag.GetOutput();
 
     set_output<vtkh::DataSet>(mag_output);
+}
+
+//-----------------------------------------------------------------------------
+VTKHStreamline::VTKHStreamline()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHStreamline::~VTKHStreamline()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHStreamline::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_streamline";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHStreamline::verify_params(const conduit::Node &params,
+                                 conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("field") ||
+       ! params["field"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'field'";
+        res = false;
+    }
+
+    if(params.has_child("output_name") &&
+       ! params["output_name"].dtype().is_string() )
+    {
+        info["errors"].append() = "Optional parameter 'output_name' must be a string";
+        res = false;
+    }
+
+    cout<<"Need to add seed params"<<endl;
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHStreamline::execute()
+{
+
+    ASCENT_INFO("We be vector magnituding");
+    if(!input(0).check_type<vtkh::DataSet>())
+    {
+        ASCENT_ERROR("vtkh_streamline input must be a vtk-h dataset");
+    }
+
+    std::string field_name = params()["field"].as_string();
+
+    vtkh::DataSet *data = input<vtkh::DataSet>(0);
+    vtkh::ParticleAdvection streamline;
+
+    streamline.SetInput(data);
+    streamline.SetField(field_name);
+    cout<<__FILE__<<" VTKHStreamline::execute()"<<endl;
+    streamline.Update();
+    cout<<__FILE__<<" VTKHStreamline::execute()  ***DONE"<<endl;
+
+    vtkh::DataSet *streamline_output = streamline.GetOutput();
+
+    set_output<vtkh::DataSet>(streamline_output);
 }
 
 //-----------------------------------------------------------------------------
