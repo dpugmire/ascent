@@ -170,22 +170,20 @@ ADIOS2::verify_params(const conduit::Node &params,
                      conduit::Node &info)
 {
     bool res = true;
-#if 0
-    if (!params.has_child("transport") ||
-        !params["transport"].dtype().is_string())
+    if (!params.has_child("engine") ||
+        !params["engine"].dtype().is_string())
     {
-        info["errors"].append() = "missing required entry 'transport'";
+        info["errors"].append() = "missing required entry 'engine'";
         res = false;
     }
 
 
     if (!params.has_child("filename") ||
-        !params["transport"].dtype().is_string() )
+        !params["filename"].dtype().is_string() )
     {
         info["errors"].append() = "missing required entry 'filename'";
         res = false;
     }
-#endif
 
     return res;
 }
@@ -196,8 +194,11 @@ ADIOS2::execute()
 {
   ASCENT_INFO("execute");
 
+  std::string engineType = params()["engine"].as_string();
+  std::string fileName   = params()["filename"].as_string();
+
   if (writer == NULL)
-    writer = new fides::io::DataSetAppendWriter("out.bp");
+    writer = new fides::io::DataSetAppendWriter(fileName);
 
     if(!input(0).check_type<DataObject>())
     {
@@ -218,8 +219,7 @@ ADIOS2::execute()
     for (vtkm::Id i = 0; i < numDS; i++)
       pds.AppendPartition(data.GetDomain(i));
 
-    writer->Write(pds, "BPFile");
-
+    writer->Write(pds, engineType);
     return;
 
 #if 0
