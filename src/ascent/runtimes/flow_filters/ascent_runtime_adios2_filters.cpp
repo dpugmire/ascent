@@ -123,7 +123,7 @@ inline ostream& operator<<(ostream& os, const set<T>& s)
     return os;
 }
 
-static fides::io::DataSetWriter *writer = NULL;
+static fides::io::DataSetAppendWriter *writer = NULL;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -186,7 +186,7 @@ ADIOS2::verify_params(const conduit::Node &params,
         res = false;
     }
 #endif
-    
+
     return res;
 }
 
@@ -195,10 +195,10 @@ void
 ADIOS2::execute()
 {
   ASCENT_INFO("execute");
-    
+
   if (writer == NULL)
-    writer = new fides::io::DataSetWriter("out.bp");
-  
+    writer = new fides::io::DataSetAppendWriter("out.bp");
+
     if(!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("ADIOS2 input must be a data object");
@@ -222,7 +222,7 @@ ADIOS2::execute()
 
     return;
 
-#if 0    
+#if 0
     if(!input("in").check_type<Node>())
     {
         // error
@@ -351,7 +351,7 @@ ADIOS2::FieldVariable(const string &fieldName, const Node &node)
     cout<<"offset: "<<dimsToStr(offset, (fieldAssoc=="vertex"))<<endl;
     */
 
-    
+
     /*
     int64_t varId = adios_define_var(adiosGroup,
                                      (char*)fieldName.c_str(),
