@@ -4,7 +4,7 @@
    e1:
     type: ADIOS2
     params:
-     path: "./output/out.bp"
-     protocol: "adios"
+     filename: "./output/out.bp"
+     engine: "SST"
      fields:
        - "energy"
