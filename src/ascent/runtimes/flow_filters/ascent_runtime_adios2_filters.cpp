@@ -123,7 +123,7 @@ inline ostream& operator<<(ostream& os, const set<T>& s)
     return os;
 }
 
-static fides::io::DataSetWriter *writer = NULL;
+static fides::io::DataSetAppendWriter *writer = NULL;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -170,23 +170,21 @@ ADIOS2::verify_params(const conduit::Node &params,
                      conduit::Node &info)
 {
     bool res = true;
-#if 0
-    if (!params.has_child("transport") ||
-        !params["transport"].dtype().is_string())
+    if (!params.has_child("engine") ||
+        !params["engine"].dtype().is_string())
     {
-        info["errors"].append() = "missing required entry 'transport'";
+        info["errors"].append() = "missing required entry 'engine'";
         res = false;
     }
 
 
     if (!params.has_child("filename") ||
-        !params["transport"].dtype().is_string() )
+        !params["filename"].dtype().is_string() )
     {
         info["errors"].append() = "missing required entry 'filename'";
         res = false;
     }
-#endif
-    
+
     return res;
 }
 
@@ -195,10 +193,27 @@ void
 ADIOS2::execute()
 {
   ASCENT_INFO("execute");
-    
+
+  std::string engineType = params()["engine"].as_string();
+  std::string fileName   = params()["filename"].as_string();
+
   if (writer == NULL)
-    writer = new fides::io::DataSetWriter("out.bp");
-  
+  {
+    writer = new fides::io::DataSetAppendWriter(fileName);
+
+    auto fields = params()["fields"];
+    int numFields = fields.number_of_children();
+
+    if (numFields != 0)
+    {
+      std::vector<std::string> varsToWrite = {"ascent_ghosts"};
+      for (int i = 0; i < numFields; i++)
+        varsToWrite.push_back(fields[i].as_string());
+
+      //writer->SetWriteFields(varsToWrite);
+    }
+  }
+
     if(!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("ADIOS2 input must be a data object");
@@ -218,11 +233,12 @@ ADIOS2::execute()
     for (vtkm::Id i = 0; i < numDS; i++)
       pds.AppendPartition(data.GetDomain(i));
 
-    writer->Write(pds, "BPFile");
-
+    std::cout<<"Writing: "<<std::endl;
+    pds.PrintSummary(std::cout);
+    writer->Write(pds, engineType);
     return;
 
-#if 0    
+#if 0
     if(!input("in").check_type<Node>())
     {
         // error
@@ -351,7 +367,7 @@ ADIOS2::FieldVariable(const string &fieldName, const Node &node)
     cout<<"offset: "<<dimsToStr(offset, (fieldAssoc=="vertex"))<<endl;
     */
 
-    
+
     /*
     int64_t varId = adios_define_var(adiosGroup,
                                      (char*)fieldName.c_str(),
